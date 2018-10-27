@@ -5,6 +5,7 @@ import edu.princeton.cs.algs4.WeightedQuickUnionUF;
 public class Percolation {
 
     private WeightedQuickUnionUF wquf;
+    private WeightedQuickUnionUF wqufCheckFull;
     private boolean[][] openSitesGrid;
     private int gridLength;
     private int topConnexion; //virtual top site
@@ -20,6 +21,13 @@ public class Percolation {
             this.topConnexion = n*n;
             this.bottomConnexion = this.topConnexion + 1;
             this.wquf = new WeightedQuickUnionUF(this.gridLength * this.gridLength + 2);
+            this.wqufCheckFull = new WeightedQuickUnionUF(this.gridLength * this.gridLength + 1);
+
+            for (int i = 0; i < this.gridLength; i++){
+                this.wquf.union(this.topConnexion, i);
+                this.wqufCheckFull.union(this.topConnexion, i);
+                this.wquf.union(this.bottomConnexion, ((this.gridLength * this.gridLength) - this.gridLength) + i);
+            }
         }
     }
 
@@ -44,15 +52,23 @@ public class Percolation {
                 this.openSites++;
                 this.openSitesGrid[row2D][col2D] = true;
                 int mappedIndex = this.map(row, col);
-
-                if (row == 1) this.wquf.union(this.topConnexion, mappedIndex);
-                else if (row == this.gridLength) this.wquf.union(this.bottomConnexion, mappedIndex);
-
-                if (this.validateParameters(row + 1, col) && this.openSitesGrid[row][col2D]) this.wquf.union(mappedIndex, this.map(row + 1, col));
-                if (this.validateParameters(row - 1, col) && this.openSitesGrid[row2D - 1][col2D]) this.wquf.union(mappedIndex, this.map(row2D, col));
-                if (this.validateParameters(row, col + 1) && this.openSitesGrid[row2D][col]) this.wquf.union(mappedIndex, this.map(row, col + 1));
-                if (this.validateParameters(row, col - 1) && this.openSitesGrid[row2D][col2D - 1]) this.wquf.union(mappedIndex, this.map(row, col2D));
+                //check under
+                this.checkAndUnion(row, col,row + 1, col);
+                //check above
+                this.checkAndUnion(row, col, row2D, col);
+                //check right
+                this.checkAndUnion(row, col, row, col + 1);
+                //check left
+                this.checkAndUnion(row, col, row, col2D);
             }
+        }
+    }
+
+    private void checkAndUnion(int row, int col, int rowToCheck, int colToCheck) {
+        if (this.validateParameters(rowToCheck, colToCheck) && this.openSitesGrid[rowToCheck - 1][colToCheck - 1]) {
+            int mappedIndex = this.map(row, col);
+            this.wquf.union(mappedIndex, this.map(rowToCheck, colToCheck));
+            this.wqufCheckFull.union(mappedIndex, this.map(rowToCheck, colToCheck));
         }
     }
 
@@ -65,7 +81,7 @@ public class Percolation {
     // is site (row, col) full?
     public boolean isFull(int row, int col) {
         if (!this.validateParameters(row, col)) throw new IllegalArgumentException();
-        else if (this.openSitesGrid[row - 1][col - 1]) return this.wquf.connected(this.topConnexion, this.map(row, col));
+        else if (this.isOpen(row, col)) return this.wqufCheckFull.connected(this.topConnexion, this.map(row, col));
         else return false;
     }
 
@@ -82,10 +98,11 @@ public class Percolation {
     // test client (optional)
     public static void main(String[] args) {
         Percolation p = new Percolation(3);
-        p.open(3,3);
-        p.open(2,3);
+        p.open(1,2);
+        p.open(2,2);
+        System.out.println(p.isFull(2, 2));
         System.out.println(p.percolates());
-        p.open(1,3);
+        p.open(3,2);
         System.out.println(p.percolates());
     }
 
