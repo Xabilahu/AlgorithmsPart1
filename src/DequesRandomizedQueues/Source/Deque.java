@@ -1,4 +1,4 @@
-package DequesRandomizedQueues;
+package DequesRandomizedQueues.Source;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
